@@ -1,0 +1,37 @@
+server {
+
+    listen 0.0.0.0:80;
+    server_name <%= node[:wordpress][:domain] %>
+    access_log /var/log/nginx/<%= node[:wordpress][:domain] %>.log;
+    error_log /var/log/nginx/<%= node[:wordpress][:domain] %>.error;
+
+    root <%= node[:wordpress][:appdir] %>;
+	client_max_body_size 20M;
+
+	# set default files to run
+	index index.html index.htm index.php;
+
+    location = /favicon.ico {
+        log_not_found off;
+        access_log off;
+    }
+
+    location = /robots.txt {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    # Try for static files, then move on to PHP and let wordpress route
+    location / {
+        try_files $uri $uri/ /index.php;
+    }
+
+	location ~ \.php$ {
+		include /etc/nginx/fastcgi_params;
+		fastcgi_index  index.php;
+		fastcgi_pass unix:/var/run/php-fpm-www.sock;
+		fastcgi_param SCRIPT_FILENAME <%= node[:wordpress][:appdir] %>$fastcgi_script_name;
+	}
+
+}
